@@ -7,6 +7,36 @@ yourself, search, react, and share files across multiple workspaces.
 cargo install --path .
 ```
 
+## Commands
+
+```sh
+# Read
+slack channel list
+slack message list '#general' --limit 50
+slack message thread '#ops' 1754160000.000100
+slack search messages 'from:andrew in:#shipping regression'
+
+# Write
+slack message send '#ops' 'deploy done'
+slack message send '@ada' --text-file message.md
+slack message send '#ops' 'reply' --thread 1754160000.000100
+slack message send '#ops' 'this week' --attach chart.png
+slack reaction add '#ops' 1754160000.000100 white_check_mark
+
+# Inspect before sending
+slack message send '#ops' 'deploy done' --dry-run
+
+# Call an unwrapped Web API method
+slack api conversations.members channel=C01234567 limit=200
+```
+
+Channel and user IDs always work. `#channel` and `@user` references resolve by
+name and fail on ambiguity. Use `--workspace <name>` to select a workspace and
+`--json` for machine-readable output.
+
+Run `slack --help` or `slack <command> --help` for the complete command and
+flag reference.
+
 ## Authenticate
 
 You authenticate once per workspace; each is saved under a name you choose.
@@ -16,7 +46,8 @@ You authenticate once per workspace; each is saved under a name you choose.
 Use a user token when you can install a private Slack app. It is supported by
 Slack and sends messages as you.
 
-1. Create an app from [`examples/app-manifest.yaml`](examples/app-manifest.yaml).
+1. Create an app from
+   [`docs/examples/app-manifest.yaml`](docs/examples/app-manifest.yaml).
 2. Install it to the workspace and copy its **User OAuth Token** (`xoxp-…`).
 3. Add and verify the workspace:
 
@@ -62,36 +93,6 @@ slack auth list
 slack auth use <workspace>
 slack auth remove <workspace>
 ```
-
-## Use
-
-```sh
-# Read
-slack channel list
-slack message list '#general' --limit 50
-slack message thread '#ops' 1754160000.000100
-slack search messages 'from:andrew in:#shipping regression'
-
-# Write
-slack message send '#ops' 'deploy done'
-slack message send '@ada' --text-file message.md
-slack message send '#ops' 'reply' --thread 1754160000.000100
-slack message send '#ops' 'this week' --attach chart.png
-slack reaction add '#ops' 1754160000.000100 white_check_mark
-
-# Inspect before sending
-slack message send '#ops' 'deploy done' --dry-run
-
-# Call an unwrapped Web API method
-slack api conversations.members channel=C01234567 limit=200
-```
-
-Channel and user IDs always work. `#channel` and `@user` references resolve by
-name and fail on ambiguity. Use `--workspace <name>` to select a workspace and
-`--json` for machine-readable output.
-
-Run `slack --help` or `slack <command> --help` for the complete command and
-flag reference.
 
 ## Security
 

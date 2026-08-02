@@ -42,7 +42,7 @@ once, mark it distributable, and ship its **`client_id`** in the binary
 ## Changes
 
 1. **One-time manual setup (Andrew, in browser — not code).**
-   - Register a Slack app (reuse `examples/app-manifest.yaml` scopes).
+   - Register a Slack app (reuse `docs/examples/app-manifest.yaml` scopes).
    - Enable **PKCE / public client** in app settings.
    - Add redirect URL `http://localhost` (Slack allows a loopback redirect
      with a dynamic port for PKCE; confirm exact form in app settings — may
@@ -106,7 +106,7 @@ once, mark it distributable, and ship its **`client_id`** in the binary
 7. **Docs.** README: lead the Authenticate section with `slack auth login`;
    demote manual xoxp paste to "or, add an existing token"; document manual
    browser token + cookie setup as the fallback. CHANGELOG 0.5.0 entry.
-   `examples/app-manifest.yaml`: add a note
+   `docs/examples/app-manifest.yaml`: add a note
    that the same manifest + PKCE toggle backs `login`.
 
 ## Files touched
@@ -124,7 +124,7 @@ once, mark it distributable, and ship its **`client_id`** in the binary
 │ Cargo.toml                 │ Edit (sha2, base64[, rand])   │
 │ README.md                  │ Edit (login-first setup)      │
 │ CHANGELOG.md               │ Edit (0.5.0)                  │
-│ examples/app-manifest.yaml │ Edit (PKCE note)              │
+│ docs/examples/app-manifest.yaml │ Edit (PKCE note)          │
 └────────────────────────────┴───────────────────────────────┘
 ```
 

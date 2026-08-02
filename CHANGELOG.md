@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 — 2026-08-02
+
+- Lead the README with a scannable command overview before authentication.
+- Add a documentation index and move the Slack app manifest under
+  `docs/examples/`.
+
 ## 0.5.0 — 2026-08-02
 
 - Remove `auth add --curl`. Pasting a full browser request can exceed terminal
