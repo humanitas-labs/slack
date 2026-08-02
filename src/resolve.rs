@@ -5,6 +5,7 @@
 //! with a five-minute TTL. Ambiguity is an error with candidates, never a guess.
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -62,6 +63,9 @@ pub struct Directory<'a> {
     /// True once the respective list was fetched live this invocation.
     channels_fresh: RefCell<bool>,
     users_fresh: RefCell<bool>,
+    /// Labels for IDs outside `users.list` (Slack Connect external members),
+    /// resolved one-off via `users.info`. `None` records a failed lookup.
+    extra_users: RefCell<HashMap<String, Option<String>>>,
 }
 
 impl<'a> Directory<'a> {
@@ -74,6 +78,7 @@ impl<'a> Directory<'a> {
             users: RefCell::new(None),
             channels_fresh: RefCell::new(false),
             users_fresh: RefCell::new(false),
+            extra_users: RefCell::new(HashMap::new()),
         }
     }
 
@@ -332,13 +337,29 @@ impl<'a> Directory<'a> {
     }
 
     /// Display label for a user ID; falls back to the raw ID.
+    ///
+    /// IDs missing from `users.list` (Slack Connect external members) resolve
+    /// one-off via `users.info`, memoized for the invocation.
     pub fn user_label(&self, id: &str) -> String {
         if let Ok(users) = self.users()
             && let Some(u) = users.iter().find(|u| u.id == id)
         {
             return u.label().to_string();
         }
-        id.to_string()
+        if let Some(known) = self.extra_users.borrow().get(id) {
+            return known.clone().unwrap_or_else(|| id.to_string());
+        }
+        let label = self
+            .client
+            .call("users.info", &[("user", id.to_string())])
+            .ok()
+            .and_then(|v| v.get("user").cloned())
+            .and_then(|u| serde_json::from_value::<User>(u).ok())
+            .map(|u| u.label().to_string());
+        self.extra_users
+            .borrow_mut()
+            .insert(id.to_string(), label.clone());
+        label.unwrap_or_else(|| id.to_string())
     }
 
     /// Open (or fetch) the DM conversation with a user.

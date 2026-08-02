@@ -82,4 +82,27 @@ pub struct Message {
     pub ts: String,
     #[serde(default)]
     pub reply_count: Option<u64>,
+    #[serde(default)]
+    pub files: Vec<MessageFile>,
+    #[serde(default)]
+    pub attachments: Vec<serde_json::Value>,
+}
+
+/// Minimal view of a file shared in a message.
+#[derive(Debug, Clone, Deserialize)]
+pub struct MessageFile {
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+}
+
+impl MessageFile {
+    pub fn label(&self) -> &str {
+        match (&self.name, &self.title) {
+            (Some(n), _) if !n.is_empty() => n,
+            (_, Some(t)) if !t.is_empty() => t,
+            _ => "file",
+        }
+    }
 }

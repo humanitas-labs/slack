@@ -106,10 +106,31 @@ fn sender_label(m: &Message, dir: &Directory) -> String {
     }
 }
 
+/// Body text, with a placeholder when the message carries only files or
+/// attachments and would otherwise render blank.
+fn body_text(m: &Message, dir: &Directory) -> String {
+    let text = clean_text(&m.text, dir);
+    if !text.is_empty() {
+        return text;
+    }
+    if !m.files.is_empty() {
+        return m
+            .files
+            .iter()
+            .map(|f| format!("[file: {}]", f.label()))
+            .collect::<Vec<_>>()
+            .join(" ");
+    }
+    if !m.attachments.is_empty() {
+        return "[attachment]".to_string();
+    }
+    text
+}
+
 fn print_messages(msgs: &[Message], dir: &Directory, show_thread_markers: bool) {
     for m in msgs {
         let head = format!("[{}] {}", ts_local(&m.ts), sender_label(m, dir));
-        println!("{head}: {}", clean_text(&m.text, dir));
+        println!("{head}: {}", body_text(m, dir));
         if show_thread_markers
             && let Some(n) = m.reply_count
             && n > 0
