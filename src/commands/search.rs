@@ -20,9 +20,9 @@ fn messages(ctx: &Ctx, query: &str, sort: &str, limit: usize) -> Result<()> {
     if query.trim().is_empty() {
         return Err(Error::Usage("empty search query".into()));
     }
-    if ctx.profile.kind() == TokenKind::Bot {
+    if ctx.workspace.kind() == TokenKind::Bot {
         return Err(Error::Usage(
-            "search requires a user or session token; this profile is a bot".into(),
+            "search requires a user or session token; this workspace uses a bot token".into(),
         ));
     }
     if !matches!(sort, "score" | "timestamp") {

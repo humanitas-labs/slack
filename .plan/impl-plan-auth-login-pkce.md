@@ -2,7 +2,7 @@
 title: "slack auth login — user-token OAuth with PKCE"
 date: 2026-08-02
 status: draft
-affects: authentication / profile setup
+affects: authentication / workspace setup
 ---
 
 ## Context
@@ -94,9 +94,9 @@ once, mark it distributable, and ship its **`client_id`** in the binary
    to add now.
 
 5. **`src/commands/auth.rs` — wire `Login`.** New `login()` fn: resolve
-   client_id (flag > built-in const), call `oauth::login`, save the profile
+   client_id (flag > built-in const), call `oauth::login`, save the workspace
    exactly like `add()` does (share the save/describe tail — refactor the
-   profile-persist block of `add()` into a helper both call).
+   workspace-persist block of `add()` into a helper both call).
 
 6. **Built-in client_id constant.** `const DIGIMATA_CLIENT_ID: &str = "…";`
    in `oauth.rs` or a `src/auth/mod.rs`. Documented as non-secret.
@@ -141,7 +141,7 @@ once, mark it distributable, and ship its **`client_id`** in the binary
 - `cargo build`, `cargo clippy`, `cargo test` clean (add unit tests for
   `pkce::challenge` against a known RFC 7636 test vector).
 - Live: register the app, `slack auth login test` against digimata's own
-  workspace, approve consent, confirm a profile is saved and `slack auth
+  workspace, approve consent, confirm a workspace is saved and `slack auth
   status test` reports the right identity.
 - `slack message send '@self' 'login flow works'` — leave it up for review,
   don't auto-delete.

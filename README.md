@@ -9,6 +9,8 @@ cargo install --path .
 
 ## Authenticate
 
+You authenticate once per workspace; each is saved under a name you choose.
+
 The supported path is a user token from a private Slack app:
 
 1. Create an app from [`examples/app-manifest.yaml`](examples/app-manifest.yaml).
@@ -16,7 +18,7 @@ The supported path is a user token from a private Slack app:
 3. Add and verify the profile:
 
 ```sh
-slack auth add work
+slack auth add <workspace>
 slack auth status
 ```
 
@@ -25,22 +27,25 @@ session. Copy any signed-in Slack API request from DevTools with **Copy as
 cURL**, then run:
 
 ```sh
-slack auth add client --curl
+slack auth add <workspace> --curl
 ```
 
-Paste the command when prompted (or pipe it in). `--curl` scans the request for
-the `xoxc` token and `xoxd` cookie, so you copy one thing instead of hunting two.
+On macOS, copy the request before running the command. The CLI reads the
+clipboard immediately; do not paste into the terminal or press Return afterward.
+You can also pipe a copied request into the command on any platform. `--curl`
+scans it for the `xoxc` token and `xoxd` cookie, so you copy one thing instead of
+hunting two.
 
 This `xoxc`/cookie path is unsupported by Slack and expires with the browser
 session. Prefer an `xoxp` user token. Bot tokens (`xoxb-…`) are accepted for
 explicit bot automation.
 
-Profiles are stored in `~/.config/slack/config.json` with mode `0600`.
+Workspaces are stored in `~/.config/slack/config.json` with mode `0600`.
 
 ```sh
 slack auth list
-slack auth use work
-slack auth remove client
+slack auth use <workspace>
+slack auth remove <workspace>
 ```
 
 ## Use
@@ -67,7 +72,7 @@ slack api conversations.members channel=C01234567 limit=200
 ```
 
 Channel and user IDs always work. `#channel` and `@user` references resolve by
-name and fail on ambiguity. Use `--profile NAME` to select a workspace and
+name and fail on ambiguity. Use `--workspace <name>` to select a workspace and
 `--json` for machine-readable output.
 
 Run `slack --help` or `slack <command> --help` for the complete command and

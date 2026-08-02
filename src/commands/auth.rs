@@ -1,4 +1,4 @@
-//! Profile management: add, list, status, use, remove.
+//! Workspace management: add, list, status, use, remove.
 
 use std::io::{BufRead, IsTerminal};
 
@@ -6,18 +6,14 @@ use chrono::Utc;
 use serde_json::Value;
 
 use crate::cli::{Args, AuthCmd};
-use crate::config::{Config, Profile, TokenKind};
+use crate::config::{Config, TokenKind, Workspace};
 use crate::error::{Error, Result};
 use crate::output::print_json;
 use crate::slack::Client;
 
 pub fn run(cmd: &AuthCmd, args: &Args) -> Result<()> {
     match cmd {
-        AuthCmd::Add {
-            name,
-            token_stdin,
-            curl,
-        } => add(name, *token_stdin, *curl, args.json),
+        AuthCmd::Add { name, token_stdin } => add(name, *token_stdin, args.json),
         AuthCmd::List => list(args.json),
         AuthCmd::Status { name } => status(name.as_deref(), args),
         AuthCmd::Use { name } => set_default(name),
@@ -47,34 +43,17 @@ fn read_curl() -> Result<String> {
     }
 
     #[cfg(target_os = "macos")]
-    return read_curl_from_clipboard(&stdin);
+    return read_curl_from_clipboard();
 
     #[cfg(not(target_os = "macos"))]
     read_curl_from_terminal(&stdin)
 }
 
 #[cfg(target_os = "macos")]
-fn read_curl_from_clipboard(stdin: &std::io::Stdin) -> Result<String> {
+fn read_curl_from_clipboard() -> Result<String> {
     use std::process::Command;
 
-    eprintln!(concat!(
-        "Import a signed-in Slack browser session:\n",
-        "\n",
-        "1. Open Slack in your browser and open Developer Tools.\n",
-        "2. Select the Network tab, then reload Slack or open a channel.\n",
-        "3. Select any request whose URL contains /api/.\n",
-        "4. Right-click it and choose Copy > Copy as cURL.\n",
-        "   Do not use Copy as fetch; it does not include the required cookie.\n",
-        "5. Return here and press Enter. Do not paste the command.\n",
-        "\n",
-        "The copied request will be read from your clipboard. Your token and cookie\n",
-        "will not be printed.\n",
-        "Press Enter when ready:"
-    ));
-
-    let mut ready = String::new();
-    stdin.lock().read_line(&mut ready)?;
-
+    eprintln!("reading the copied Slack request from the clipboard...");
     let output = Command::new("pbpaste").output().map_err(|error| {
         Error::Usage(format!(
             "could not read the macOS clipboard with pbpaste: {error}"
@@ -151,7 +130,7 @@ fn add(name: &str, token_stdin: bool, curl: bool, json: bool) -> Result<()> {
         }
     }
 
-    let mut profile = Profile {
+    let mut workspace = Workspace {
         token,
         cookie,
         team: None,
@@ -161,37 +140,37 @@ fn add(name: &str, token_stdin: bool, curl: bool, json: bool) -> Result<()> {
         url: None,
         validated_at: None,
     };
-    let client = Client::new(&profile, false)?;
+    let client = Client::new(&workspace, false)?;
     let v = client.call("auth.test", &[])?;
     let field = |k: &str| v.get(k).and_then(Value::as_str).map(str::to_string);
-    profile.team = field("team");
-    profile.team_id = field("team_id");
-    profile.user = field("user");
-    profile.user_id = field("user_id");
-    profile.url = field("url");
-    profile.validated_at = Some(Utc::now().to_rfc3339());
+    workspace.team = field("team");
+    workspace.team_id = field("team_id");
+    workspace.user = field("user");
+    workspace.user_id = field("user_id");
+    workspace.url = field("url");
+    workspace.validated_at = Some(Utc::now().to_rfc3339());
 
     let mut cfg = Config::load()?;
-    let first = cfg.profiles.is_empty();
-    let identity = describe(&profile);
-    cfg.profiles.insert(name.to_string(), profile);
+    let first = cfg.workspaces.is_empty();
+    let identity = describe(&workspace);
+    cfg.workspaces.insert(name.to_string(), workspace);
     if first {
-        cfg.default_profile = Some(name.to_string());
+        cfg.default_workspace = Some(name.to_string());
     }
     cfg.save()?;
 
     if json {
         print_json(&v);
     } else {
-        println!("added profile '{name}': {identity}");
+        println!("added workspace '{name}': {identity}");
         if first {
-            println!("set as default profile");
+            println!("set as default workspace");
         }
     }
     Ok(())
 }
 
-fn describe(p: &Profile) -> String {
+fn describe(p: &Workspace) -> String {
     format!(
         "{} {} ({}) in {} [{} token]",
         if p.kind().acts_as_member() {
@@ -210,12 +189,12 @@ fn list(json: bool) -> Result<()> {
     let cfg = Config::load()?;
     if json {
         let rows: Vec<Value> = cfg
-            .profiles
+            .workspaces
             .iter()
             .map(|(name, p)| {
                 serde_json::json!({
                     "name": name,
-                    "default": cfg.default_profile.as_deref() == Some(name),
+                    "default": cfg.default_workspace.as_deref() == Some(name),
                     "kind": p.kind().label(),
                     "team": p.team,
                     "team_id": p.team_id,
@@ -227,12 +206,12 @@ fn list(json: bool) -> Result<()> {
         print_json(&Value::Array(rows));
         return Ok(());
     }
-    if cfg.profiles.is_empty() {
-        println!("no profiles — run `slack auth add <name>`");
+    if cfg.workspaces.is_empty() {
+        println!("no workspaces — run `slack auth add <name>`");
         return Ok(());
     }
-    for (name, p) in &cfg.profiles {
-        let marker = if cfg.default_profile.as_deref() == Some(name) {
+    for (name, p) in &cfg.workspaces {
+        let marker = if cfg.default_workspace.as_deref() == Some(name) {
             "*"
         } else {
             " "
@@ -244,8 +223,8 @@ fn list(json: bool) -> Result<()> {
 
 fn status(name: Option<&str>, args: &Args) -> Result<()> {
     let cfg = Config::load()?;
-    let (resolved, profile) = cfg.resolve(name.or(args.profile.as_deref()))?;
-    let client = Client::new(&profile, args.verbose)?;
+    let (resolved, workspace) = cfg.resolve(name.or(args.workspace.as_deref()))?;
+    let client = Client::new(&workspace, args.verbose)?;
     let v = client.call("auth.test", &[])?;
     if args.json {
         print_json(&v);
@@ -253,11 +232,11 @@ fn status(name: Option<&str>, args: &Args) -> Result<()> {
     }
     let s = |k: &str| v.get(k).and_then(Value::as_str).unwrap_or("?");
     println!(
-        "profile '{resolved}': {} ({}) in {} [{} token] — {}",
+        "workspace '{resolved}': {} ({}) in {} [{} token] — {}",
         s("user"),
         s("user_id"),
         s("team"),
-        profile.kind().label(),
+        workspace.kind().label(),
         s("url"),
     );
     Ok(())
@@ -265,26 +244,26 @@ fn status(name: Option<&str>, args: &Args) -> Result<()> {
 
 fn set_default(name: &str) -> Result<()> {
     let mut cfg = Config::load()?;
-    if !cfg.profiles.contains_key(name) {
-        return Err(Error::Auth(format!("profile not found: {name}")));
+    if !cfg.workspaces.contains_key(name) {
+        return Err(Error::Auth(format!("workspace not found: {name}")));
     }
-    cfg.default_profile = Some(name.to_string());
+    cfg.default_workspace = Some(name.to_string());
     cfg.save()?;
-    println!("default profile: {name}");
+    println!("default workspace: {name}");
     Ok(())
 }
 
 fn remove(name: &str, yes: bool) -> Result<()> {
     let mut cfg = Config::load()?;
-    if !cfg.profiles.contains_key(name) {
-        return Err(Error::Auth(format!("profile not found: {name}")));
+    if !cfg.workspaces.contains_key(name) {
+        return Err(Error::Auth(format!("workspace not found: {name}")));
     }
-    super::confirm(&format!("remove profile '{name}'?"), yes)?;
-    cfg.profiles.remove(name);
-    if cfg.default_profile.as_deref() == Some(name) {
-        cfg.default_profile = None;
+    super::confirm(&format!("remove workspace '{name}'?"), yes)?;
+    cfg.workspaces.remove(name);
+    if cfg.default_workspace.as_deref() == Some(name) {
+        cfg.default_workspace = None;
     }
     cfg.save()?;
-    println!("removed profile '{name}'");
+    println!("removed workspace '{name}'");
     Ok(())
 }

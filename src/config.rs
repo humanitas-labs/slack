@@ -1,4 +1,4 @@
-//! Profile storage and precedence.
+//! Workspace storage and precedence.
 //!
 //! Tokens live in `~/.config/slack/config.json` at mode 0600 by deliberate
 //! choice (plan amendment 2): the OS keychain re-binds to the binary signature
@@ -55,7 +55,7 @@ impl TokenKind {
 
 /// One stored workspace credential plus non-secret identity metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Profile {
+pub struct Workspace {
     pub token: String,
     /// `d` cookie value; required when the token is `xoxc-`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -75,7 +75,7 @@ pub struct Profile {
     pub validated_at: Option<String>,
 }
 
-impl Profile {
+impl Workspace {
     pub fn kind(&self) -> TokenKind {
         TokenKind::of(&self.token)
     }
@@ -83,13 +83,17 @@ impl Profile {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default_profile: Option<String>,
-    #[serde(default)]
-    pub profiles: BTreeMap<String, Profile>,
+    #[serde(
+        default,
+        alias = "default_profile",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub default_workspace: Option<String>,
+    #[serde(default, alias = "profiles")]
+    pub workspaces: BTreeMap<String, Workspace>,
 }
 
-/// `~/.config/slack` — config plus per-profile directory caches.
+/// `~/.config/slack` — config plus per-workspace directory caches.
 pub fn config_dir() -> Result<PathBuf> {
     let home =
         dirs::home_dir().ok_or_else(|| Error::Auth("cannot determine home directory".into()))?;
@@ -124,20 +128,20 @@ impl Config {
         Ok(())
     }
 
-    /// Resolve the active profile.
+    /// Resolve the active workspace.
     ///
-    /// Precedence: `--profile` flag > `SLACK_TOKEN` env (with optional
-    /// `SLACK_COOKIE`) > `SLACK_PROFILE` env > configured default > sole profile.
-    pub fn resolve(&self, flag: Option<&str>) -> Result<(String, Profile)> {
+    /// Precedence: `--workspace` flag > `SLACK_TOKEN` env (with optional
+    /// `SLACK_COOKIE`) > `SLACK_WORKSPACE` env > configured default > sole workspace.
+    pub fn resolve(&self, flag: Option<&str>) -> Result<(String, Workspace)> {
         if let Some(name) = flag {
             let p = self
-                .profiles
+                .workspaces
                 .get(name)
-                .ok_or_else(|| Error::Auth(format!("profile not found: {name}")))?;
+                .ok_or_else(|| Error::Auth(format!("workspace not found: {name}")))?;
             return Ok((name.to_string(), p.clone()));
         }
         if let Ok(token) = std::env::var("SLACK_TOKEN") {
-            let profile = Profile {
+            let workspace = Workspace {
                 token,
                 cookie: std::env::var("SLACK_COOKIE").ok(),
                 team: None,
@@ -147,23 +151,23 @@ impl Config {
                 url: None,
                 validated_at: None,
             };
-            return Ok(("env".to_string(), profile));
+            return Ok(("env".to_string(), workspace));
         }
-        let name = std::env::var("SLACK_PROFILE")
+        let name = std::env::var("SLACK_WORKSPACE")
             .ok()
-            .or_else(|| self.default_profile.clone())
+            .or_else(|| self.default_workspace.clone())
             .or_else(|| {
-                if self.profiles.len() == 1 {
-                    self.profiles.keys().next().cloned()
+                if self.workspaces.len() == 1 {
+                    self.workspaces.keys().next().cloned()
                 } else {
                     None
                 }
             })
-            .ok_or_else(|| Error::Auth("no profile configured — run `slack auth add`".into()))?;
+            .ok_or_else(|| Error::Auth("no workspace configured — run `slack auth add`".into()))?;
         let p = self
-            .profiles
+            .workspaces
             .get(&name)
-            .ok_or_else(|| Error::Auth(format!("profile not found: {name}")))?;
+            .ok_or_else(|| Error::Auth(format!("workspace not found: {name}")))?;
         Ok((name, p.clone()))
     }
 }

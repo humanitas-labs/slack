@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
-use crate::config::Profile;
+use crate::config::Workspace;
 use crate::error::{Error, Result};
 
 const BASE: &str = "https://slack.com/api";
@@ -21,14 +21,14 @@ pub struct Client {
 }
 
 impl Client {
-    /// Build a client for a profile. Session (`xoxc-`) tokens require the
+    /// Build a client for a workspace. Session (`xoxc-`) tokens require the
     /// `d` cookie and fail here without one.
-    pub fn new(profile: &Profile, verbose: bool) -> Result<Client> {
-        let cookie = profile
+    pub fn new(workspace: &Workspace, verbose: bool) -> Result<Client> {
+        let cookie = workspace
             .cookie
             .as_ref()
             .map(|c| c.strip_prefix("d=").unwrap_or(c).to_string());
-        if profile.token.starts_with("xoxc-") && cookie.is_none() {
+        if workspace.token.starts_with("xoxc-") && cookie.is_none() {
             return Err(Error::Auth(
                 "session (xoxc) tokens require the `d` cookie — re-run `slack auth add`".into(),
             ));
@@ -39,7 +39,7 @@ impl Client {
             .build()?;
         Ok(Client {
             http,
-            token: profile.token.clone(),
+            token: workspace.token.clone(),
             cookie,
             verbose,
         })

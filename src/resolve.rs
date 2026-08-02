@@ -1,7 +1,7 @@
-//! Name → ID resolution with a per-profile directory cache.
+//! Name → ID resolution with a per-workspace directory cache.
 //!
 //! Exact IDs always win and never hit the network. Names resolve against
-//! `conversations.list` / `users.list`, cached under `~/.cache/slack/<profile>/`
+//! `conversations.list` / `users.list`, cached under `~/.cache/slack/<workspace>/`
 //! with a five-minute TTL. Ambiguity is an error with candidates, never a guess.
 
 use std::cell::RefCell;

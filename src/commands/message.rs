@@ -251,9 +251,9 @@ fn send(
 
     let identity = format!(
         "{} ({}) [{} token]",
-        ctx.profile.user.as_deref().unwrap_or("?"),
-        ctx.profile.user_id.as_deref().unwrap_or("?"),
-        ctx.profile.kind().label(),
+        ctx.workspace.user.as_deref().unwrap_or("?"),
+        ctx.workspace.user_id.as_deref().unwrap_or("?"),
+        ctx.workspace.kind().label(),
     );
     if dry_run {
         println!("would send as {identity}");
@@ -306,9 +306,9 @@ fn send(
     let v = ctx.client.call("chat.postMessage", &params)?;
 
     // Identity contract: an operator token must post as the stored member.
-    if ctx.profile.kind().acts_as_member() {
+    if ctx.workspace.kind().acts_as_member() {
         let author = v.pointer("/message/user").and_then(Value::as_str);
-        let expected = ctx.profile.user_id.as_deref();
+        let expected = ctx.workspace.user_id.as_deref();
         if let (Some(a), Some(e)) = (author, expected)
             && a != e
         {

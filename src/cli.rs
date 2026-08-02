@@ -9,9 +9,9 @@ use clap::{Parser, Subcommand};
     about = "Operate Slack conversations from the command line"
 )]
 pub struct Args {
-    /// Profile to use (overrides SLACK_PROFILE and the configured default)
+    /// Workspace to use (overrides SLACK_WORKSPACE and the configured default)
     #[arg(long, global = true)]
-    pub profile: Option<String>,
+    pub workspace: Option<String>,
 
     /// Emit stable machine-readable JSON on stdout
     #[arg(long, global = true)]
@@ -31,7 +31,7 @@ pub struct Args {
 
 #[derive(Subcommand)]
 pub enum Cmd {
-    /// Manage workspace profiles
+    /// Manage workspaces
     Auth {
         #[command(subcommand)]
         cmd: AuthCmd,
@@ -80,32 +80,24 @@ pub enum Cmd {
 
 #[derive(Subcommand)]
 pub enum AuthCmd {
-    /// Add a profile (prompts for the token; xoxc tokens also prompt for the d cookie)
+    /// Add a workspace (prompts for the token; xoxc tokens also prompt for the d cookie)
     Add {
-        /// Profile name
+        /// Workspace name
         name: String,
         /// Read token (line 1) and optional cookie (line 2) from stdin
-        #[arg(long, conflicts_with = "curl")]
-        token_stdin: bool,
-        /// Import a browser session from a DevTools "Copy as cURL" request
-        ///
-        /// The command walks you through finding and copying a signed-in Slack API
-        /// request. On macOS it reads the copied request from the clipboard; piped
-        /// input is supported on every platform. It extracts the xoxc token and
-        /// xoxd cookie, then verifies the account before saving the profile.
         #[arg(long)]
-        curl: bool,
+        token_stdin: bool,
     },
-    /// List profiles
+    /// List workspaces
     List,
-    /// Validate a profile against auth.test and report identity
+    /// Validate a workspace against auth.test and report identity
     Status {
-        /// Profile name (default: the active profile)
+        /// Workspace name (default: the active workspace)
         name: Option<String>,
     },
-    /// Set the default profile
+    /// Set the default workspace
     Use { name: String },
-    /// Remove a profile
+    /// Remove a workspace
     Remove {
         name: String,
         /// Skip confirmation

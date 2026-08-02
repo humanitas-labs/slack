@@ -3,7 +3,6 @@
 mod api;
 mod auth;
 mod channel;
-mod curl;
 mod file;
 mod message;
 mod reaction;
@@ -13,7 +12,7 @@ mod user;
 use std::io::{IsTerminal, Write};
 
 use crate::cli::{Args, Cmd};
-use crate::config::{Config, Profile};
+use crate::config::{Config, Workspace};
 use crate::error::{Error, Result};
 use crate::resolve::Directory;
 use crate::slack::Client;
@@ -21,8 +20,8 @@ use crate::slack::Client;
 /// Everything a command handler needs.
 pub struct Ctx {
     pub client: Client,
-    pub profile: Profile,
-    pub profile_name: String,
+    pub workspace: Workspace,
+    pub workspace_name: String,
     pub json: bool,
     pub no_cache: bool,
 }
@@ -30,19 +29,19 @@ pub struct Ctx {
 impl Ctx {
     fn new(args: &Args) -> Result<Ctx> {
         let cfg = Config::load()?;
-        let (profile_name, profile) = cfg.resolve(args.profile.as_deref())?;
-        let client = Client::new(&profile, args.verbose)?;
+        let (workspace_name, workspace) = cfg.resolve(args.workspace.as_deref())?;
+        let client = Client::new(&workspace, args.verbose)?;
         Ok(Ctx {
             client,
-            profile,
-            profile_name,
+            workspace,
+            workspace_name,
             json: args.json,
             no_cache: args.no_cache,
         })
     }
 
     pub fn dir(&self) -> Directory<'_> {
-        Directory::new(&self.client, &self.profile_name, self.no_cache)
+        Directory::new(&self.client, &self.workspace_name, self.no_cache)
     }
 }
 
