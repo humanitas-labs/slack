@@ -28,6 +28,9 @@ cURL**, then run:
 slack auth add client --curl
 ```
 
+Paste the command when prompted (or pipe it in). `--curl` scans the request for
+the `xoxc` token and `xoxd` cookie, so you copy one thing instead of hunting two.
+
 This `xoxc`/cookie path is unsupported by Slack and expires with the browser
 session. Prefer an `xoxp` user token. Bot tokens (`xoxb-…`) are accepted for
 explicit bot automation.
@@ -51,7 +54,7 @@ slack search messages 'from:andrew in:#shipping regression'
 
 # Write
 slack message send '#ops' 'deploy done'
-printf 'multi\nline' | slack message send '@ada'
+slack message send '@ada' --text-file message.md
 slack message send '#ops' 'reply' --thread 1754160000.000100
 slack message send '#ops' 'this week' --attach chart.png
 slack reaction add '#ops' 1754160000.000100 white_check_mark

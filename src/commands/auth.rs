@@ -47,7 +47,7 @@ fn read_curl() -> Result<String> {
         stdin.lock().read_to_string(&mut buf)?;
         return Ok(buf);
     }
-    eprintln!("paste the 'Copy as cURL' command, then press enter twice:");
+    eprintln!("paste the 'Copy as cURL' command, then press enter on a blank line:");
     let mut buf = String::new();
     for line in stdin.lock().lines() {
         let line = line?;
