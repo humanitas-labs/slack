@@ -73,7 +73,7 @@ pub fn run(ctx: &Ctx, cmd: MessageCmd) -> Result<()> {
 
 /// Resolve a message target: channel name/ID, or `@user` → DM conversation.
 /// Returns (conversation id, human label).
-fn resolve_target(dir: &Directory, target: &str) -> Result<(String, String)> {
+pub fn resolve_target(dir: &Directory, target: &str) -> Result<(String, String)> {
     match parse_target(target) {
         Target::User(name) => {
             let user = dir.resolve_user(&name)?;

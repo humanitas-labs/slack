@@ -119,6 +119,25 @@ impl Client {
         }
     }
 
+    /// POST raw bytes to a pre-signed upload URL.
+    ///
+    /// Deliberately unauthenticated: the URL carries its own signature, and
+    /// the host is not the Web API, so the response is plain text rather than
+    /// a Slack envelope. Never retried — a repeat would duplicate the upload.
+    pub fn put_bytes(&self, url: &str, bytes: Vec<u8>) -> Result<()> {
+        if self.verbose {
+            eprintln!("-> upload {url}");
+        }
+        let resp = self.http.post(url).body(bytes).send()?;
+        if !resp.status().is_success() {
+            return Err(Error::Api {
+                method: "file upload".into(),
+                code: format!("upload URL returned HTTP {}", resp.status()),
+            });
+        }
+        Ok(())
+    }
+
     /// Follow cursor pagination on a list method, collecting `key` items.
     ///
     /// `limit: Some(n)` stops after n items; `None` (`--all`) follows every

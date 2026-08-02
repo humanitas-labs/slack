@@ -4,6 +4,7 @@ mod api;
 mod auth;
 mod channel;
 mod curl;
+mod file;
 mod message;
 mod reaction;
 mod search;
@@ -58,6 +59,7 @@ pub fn run(args: Args) -> Result<()> {
                 Cmd::Search { cmd } => search::run(&ctx, cmd),
                 Cmd::User { cmd } => user::run(&ctx, cmd),
                 Cmd::Reaction { cmd } => reaction::run(&ctx, cmd),
+                Cmd::File { cmd } => file::run(&ctx, cmd),
                 Cmd::Api {
                     method,
                     params,

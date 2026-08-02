@@ -61,6 +61,11 @@ pub enum Cmd {
         #[command(subcommand)]
         cmd: ReactionCmd,
     },
+    /// Files
+    File {
+        #[command(subcommand)]
+        cmd: FileCmd,
+    },
     /// Call any Web API method directly
     Api {
         /// Method name, e.g. conversations.members
@@ -225,6 +230,26 @@ pub enum UserCmd {
     Info {
         /// User ID, @display-name, or name
         user: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum FileCmd {
+    /// Upload a file to a channel, DM, or thread
+    Upload {
+        /// Channel ID, #name, or @user
+        channel: String,
+        /// Path to the file
+        path: String,
+        /// File title shown in Slack (default: the filename)
+        #[arg(long)]
+        title: Option<String>,
+        /// Message posted alongside the file
+        #[arg(long)]
+        comment: Option<String>,
+        /// Upload into a thread (root timestamp)
+        #[arg(long)]
+        thread: Option<String>,
     },
 }
 

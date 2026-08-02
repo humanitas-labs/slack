@@ -97,6 +97,9 @@ slack user list
 slack user info '@ada'
 slack reaction add '#ops' 1754160000.000100 white_check_mark
 
+slack file upload '#ops' chart.png --comment 'this week'
+slack file upload '@ada' notes.md --title 'Handoff notes'
+
 slack api conversations.members channel=C01234567 limit=200
 slack api chat.postMessage --data payload.json
 ```

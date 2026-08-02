@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-08-02
+
+- `slack file upload <channel> <path>` via the three-step external upload
+  flow (`files.upload` was retired 2025-11-12), with `--title`, `--comment`,
+  and `--thread`. The pre-signed PUT is never retried, so a failure cannot
+  duplicate the upload.
+- Fix: DM results in `search messages` rendered as `#U0B…` because Slack puts
+  the partner's user ID in `channel.name` for DMs. Now shows `@Display Name`.
+
 ## 0.2.0 — 2026-08-02
 
 - `slack auth add <name> --curl` extracts the `xoxc` token and `xoxd` cookie

@@ -6,6 +6,7 @@ use crate::cli::SearchCmd;
 use crate::config::TokenKind;
 use crate::error::{Error, Result};
 use crate::output::{print_json, ts_local};
+use crate::resolve::Directory;
 
 use super::Ctx;
 
@@ -61,14 +62,10 @@ fn messages(ctx: &Ctx, query: &str, sort: &str, limit: usize) -> Result<()> {
         print_json(&serde_json::json!({ "query": query, "matches": matches }));
         return Ok(());
     }
+    let dir = ctx.dir();
     for m in &matches {
         let s = |ptr: &str| m.pointer(ptr).and_then(Value::as_str).unwrap_or("");
-        let channel = s("/channel/name");
-        let where_ = if channel.is_empty() {
-            s("/channel/id").to_string()
-        } else {
-            format!("#{channel}")
-        };
+        let where_ = location(m, &dir);
         println!(
             "[{}] {} {}: {}",
             ts_local(s("/ts")),
@@ -82,4 +79,32 @@ fn messages(ctx: &Ctx, query: &str, sort: &str, limit: usize) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Where a match happened, as a human label.
+///
+/// `search.messages` reports DM conversations with the partner's user ID in
+/// `channel.name`, so a naive `#{name}` renders `#U0B…`. Detect that and show
+/// the member instead.
+fn location(m: &Value, dir: &Directory) -> String {
+    let s = |ptr: &str| m.pointer(ptr).and_then(Value::as_str).unwrap_or("");
+    let id = s("/channel/id");
+    let name = s("/channel/name");
+    let is_dm = m
+        .pointer("/channel/is_im")
+        .and_then(Value::as_bool)
+        .unwrap_or_else(|| id.starts_with('D'));
+    if is_dm {
+        let partner = if name.starts_with('U') || name.starts_with('W') {
+            name
+        } else {
+            id
+        };
+        return format!("@{}", dir.user_label(partner));
+    }
+    if name.is_empty() {
+        id.to_string()
+    } else {
+        format!("#{name}")
+    }
 }
