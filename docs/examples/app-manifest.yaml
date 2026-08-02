@@ -28,6 +28,7 @@ oauth_config:
       - chat:write
       - search:read
       - reactions:write
+      - files:read      # `file download`
       - files:write     # `file upload`
     # bot:              # optional secondary mode
     #   - channels:read

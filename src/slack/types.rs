@@ -92,6 +92,8 @@ pub struct Message {
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageFile {
     #[serde(default)]
+    pub id: Option<String>,
+    #[serde(default)]
     pub name: Option<String>,
     #[serde(default)]
     pub title: Option<String>,

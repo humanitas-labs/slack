@@ -117,7 +117,10 @@ fn body_text(m: &Message, dir: &Directory) -> String {
         return m
             .files
             .iter()
-            .map(|f| format!("[file: {}]", f.label()))
+            .map(|f| match &f.id {
+                Some(id) => format!("[file {id}: {}]", f.label()),
+                None => format!("[file: {}]", f.label()),
+            })
             .collect::<Vec<_>>()
             .join(" ");
     }

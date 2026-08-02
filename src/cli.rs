@@ -251,6 +251,14 @@ pub enum FileCmd {
         #[arg(long)]
         thread: Option<String>,
     },
+    /// Download a file by ID (shown as `[file F…: name]` in message lists)
+    Download {
+        /// File ID (F…)
+        file: String,
+        /// Destination path (default: the file's name in the current directory)
+        #[arg(long, short)]
+        out: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]

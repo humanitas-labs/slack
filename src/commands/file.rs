@@ -38,7 +38,45 @@ pub fn run(ctx: &Ctx, cmd: FileCmd) -> Result<()> {
             )?;
             report(ctx, &done, &paths, &label)
         }
+        FileCmd::Download { file, out } => download(ctx, &file, out.as_deref()),
     }
+}
+
+/// Download a file by ID via `files.info` → `url_private_download`.
+fn download(ctx: &Ctx, id: &str, out: Option<&str>) -> Result<()> {
+    let v = ctx.client.call("files.info", &[("file", id.to_string())])?;
+    let file = v.get("file").ok_or_else(|| Error::Api {
+        method: "files.info".into(),
+        code: "missing file in response".into(),
+    })?;
+    let s = |k: &str| file.get(k).and_then(Value::as_str);
+    let url = s("url_private_download")
+        .or_else(|| s("url_private"))
+        .ok_or_else(|| Error::Api {
+            method: "files.info".into(),
+            code: "file has no private download URL".into(),
+        })?;
+    let name = s("name").unwrap_or(id);
+    let dest = out.unwrap_or(name);
+    if Path::new(dest).exists() {
+        return Err(Error::Usage(format!(
+            "'{dest}' already exists — pass --out to choose another path"
+        )));
+    }
+    let bytes = ctx.client.get_bytes(url)?;
+    std::fs::write(dest, &bytes)
+        .map_err(|e| Error::Usage(format!("cannot write '{dest}': {e}")))?;
+    if ctx.json {
+        print_json(&serde_json::json!({
+            "id": id,
+            "name": name,
+            "path": dest,
+            "bytes": bytes.len(),
+        }));
+    } else {
+        println!("downloaded {name} -> {dest} ({} bytes)", bytes.len());
+    }
+    Ok(())
 }
 
 /// Upload files and share them into a conversation, optionally with a comment.

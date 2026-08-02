@@ -138,6 +138,39 @@ impl Client {
         Ok(())
     }
 
+    /// Authenticated GET of a private file URL, returning the bytes.
+    ///
+    /// Sends credentials only to slack.com hosts (`url_private_download`
+    /// lives on files.slack.com); any other host is rejected rather than
+    /// handed the token.
+    pub fn get_bytes(&self, url: &str) -> Result<Vec<u8>> {
+        let host_ok = reqwest::Url::parse(url)
+            .ok()
+            .and_then(|u| u.host_str().map(str::to_string))
+            .is_some_and(|h| h == "slack.com" || h.ends_with(".slack.com"));
+        if !host_ok {
+            return Err(Error::Api {
+                method: "file download".into(),
+                code: format!("refusing to send credentials to non-Slack URL: {url}"),
+            });
+        }
+        if self.verbose {
+            eprintln!("-> download {url}");
+        }
+        let mut req = self.http.get(url).bearer_auth(&self.token);
+        if let Some(c) = &self.cookie {
+            req = req.header(reqwest::header::COOKIE, format!("d={c}"));
+        }
+        let resp = req.send()?;
+        if !resp.status().is_success() {
+            return Err(Error::Api {
+                method: "file download".into(),
+                code: format!("download URL returned HTTP {}", resp.status()),
+            });
+        }
+        Ok(resp.bytes()?.to_vec())
+    }
+
     /// Follow cursor pagination on a list method, collecting `key` items.
     ///
     /// `limit: Some(n)` stops after n items; `None` (`--all`) follows every
