@@ -23,12 +23,14 @@ pub fn run(ctx: &Ctx, cmd: ReactionCmd) -> Result<()> {
 
 fn apply(ctx: &Ctx, method: &str, channel: &str, ts: &str, emoji: &str) -> Result<()> {
     let dir = ctx.dir();
-    let c = dir.resolve_channel(channel)?;
+    // Same target grammar as `message`: #channel, @user, or any conversation
+    // ID — reacting in a DM is as ordinary as reacting in a channel.
+    let (id, label) = super::message::resolve_target(&dir, channel)?;
     let name = emoji.trim_matches(':').to_string();
     let v = ctx.client.call(
         method,
         &[
-            ("channel", c.id.clone()),
+            ("channel", id),
             ("timestamp", ts.to_string()),
             ("name", name.clone()),
         ],
@@ -42,6 +44,6 @@ fn apply(ctx: &Ctx, method: &str, channel: &str, ts: &str, emoji: &str) -> Resul
     } else {
         "removed"
     };
-    println!("{verb} :{name}: on {} ts {ts}", c.handle());
+    println!("{verb} :{name}: on {label} ts {ts}");
     Ok(())
 }

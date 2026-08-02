@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 — 2026-08-02
+
+- Fix: `reaction add/remove` resolved targets through the channel path, so a
+  DM target (`@user` or a user ID) failed with `channel_not_found`. It now
+  uses the same target grammar as `message`. Found by the first real
+  end-to-end write round trip.
+
 ## 0.4.0 — 2026-08-02
 
 - `slack message send --attach <path>` (repeatable) sends a message with
