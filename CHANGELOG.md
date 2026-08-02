@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2 — 2026-08-02
+
+- Prebuilt release binaries: a tag push builds macOS (arm64/x86_64) and
+  static Linux musl (arm64/x86_64) binaries and attaches them, with sha256
+  checksums, to the GitHub release.
+- `install.sh` one-liner installer: detects OS/arch, pulls the latest
+  release, installs to `~/.local/bin` (override `SLACK_INSTALL_DIR`).
+
 ## 0.5.1 — 2026-08-02
 
 - Lead the README with a scannable command overview before authentication.

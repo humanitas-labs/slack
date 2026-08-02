@@ -3,8 +3,22 @@
 Operate Slack from the command line. Read conversations, send messages as
 yourself, search, react, and share files across multiple workspaces.
 
+## Install
+
+Prebuilt binaries (macOS arm64/x86_64, Linux arm64/x86_64):
+
 ```sh
-cargo install --path .
+curl -fsSL https://raw.githubusercontent.com/digimata/slack/master/install.sh | sh
+```
+
+Installs to `~/.local/bin` (override with `SLACK_INSTALL_DIR`). Binaries are
+also on the [releases page](https://github.com/digimata/slack/releases), with
+sha256 checksums.
+
+Or build from source:
+
+```sh
+cargo install --git https://github.com/digimata/slack
 ```
 
 ## Commands
