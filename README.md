@@ -97,8 +97,9 @@ slack user list
 slack user info '@ada'
 slack reaction add '#ops' 1754160000.000100 white_check_mark
 
-slack file upload '#ops' chart.png --comment 'this week'
-slack file upload '@ada' notes.md --title 'Handoff notes'
+slack message send '#ops' 'this week' --attach chart.png
+slack message send '@ada' 'both files' --attach a.png --attach b.pdf
+slack file upload '@ada' notes.md --title 'Handoff notes'   # file-first alias
 
 slack api conversations.members channel=C01234567 limit=200
 slack api chat.postMessage --data payload.json
@@ -106,6 +107,13 @@ slack api chat.postMessage --data payload.json
 
 Global flags: `--profile NAME`, `--json` (stable machine output),
 `--no-cache`, `--verbose`.
+
+### Attachments
+
+`--attach` is repeatable and the message text becomes the file's comment.
+This is a single Slack operation, not a send followed by an upload — the
+upload flow's `initial_comment` carries the text. `slack file upload` is the
+same thing with the arguments reordered, for when the file is the point.
 
 ### Targets
 

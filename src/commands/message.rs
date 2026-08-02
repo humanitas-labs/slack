@@ -44,6 +44,7 @@ pub fn run(ctx: &Ctx, cmd: MessageCmd) -> Result<()> {
             text_file,
             thread,
             broadcast,
+            attach,
             blocks,
             dry_run,
         } => send(
@@ -53,6 +54,7 @@ pub fn run(ctx: &Ctx, cmd: MessageCmd) -> Result<()> {
             text_file.as_deref(),
             thread.as_deref(),
             broadcast,
+            &attach,
             blocks.as_deref(),
             dry_run,
         ),
@@ -232,10 +234,14 @@ fn send(
     text_file: Option<&str>,
     thread: Option<&str>,
     broadcast: bool,
+    attach: &[String],
     blocks: Option<&str>,
     dry_run: bool,
 ) -> Result<()> {
-    let body = if blocks.is_some() && text.is_empty() && text_file.is_none() {
+    // Attachments and blocks may travel without body text; everything else
+    // requires it.
+    let text_optional = blocks.is_some() || !attach.is_empty();
+    let body = if text_optional && text.is_empty() && text_file.is_none() {
         String::new()
     } else {
         gather_text(text, text_file)?
@@ -258,8 +264,28 @@ fn send(
                 None => String::new(),
             }
         );
+        if !attach.is_empty() {
+            for path in attach {
+                let size = std::fs::metadata(path)
+                    .map(|m| format!("{} bytes", m.len()))
+                    .unwrap_or_else(|e| format!("UNREADABLE: {e}"));
+                println!("attach: {path} ({size})");
+            }
+        }
         println!("---\n{body}");
         return Ok(());
+    }
+
+    // With attachments the share call carries the text as the file's comment,
+    // so this is one Slack operation, not a send followed by an upload.
+    if !attach.is_empty() {
+        let comment = if body.is_empty() {
+            None
+        } else {
+            Some(body.as_str())
+        };
+        let done = super::file::share(ctx, &id, attach, None, comment, thread)?;
+        return super::file::report(ctx, &done, attach, &label);
     }
 
     let mut params = vec![("channel", id.clone())];

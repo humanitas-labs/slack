@@ -175,6 +175,9 @@ pub enum MessageCmd {
         /// Also send the thread reply to the channel
         #[arg(long, requires = "thread")]
         broadcast: bool,
+        /// Attach a file (repeatable); the message becomes its comment
+        #[arg(long, conflicts_with = "blocks")]
+        attach: Vec<String>,
         /// JSON blocks payload from a file
         #[arg(long)]
         blocks: Option<String>,

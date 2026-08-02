@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-08-02
+
+- `slack message send --attach <path>` (repeatable) sends a message with
+  files in one operation — the text rides as the upload's `initial_comment`,
+  so this is one Slack call, not a send plus an upload. `--dry-run` lists
+  each attachment with its size, or flags it unreadable. `file upload`
+  remains as the file-first alias over the same path.
+
 ## 0.3.0 — 2026-08-02
 
 - `slack file upload <channel> <path>` via the three-step external upload
