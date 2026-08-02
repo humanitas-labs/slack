@@ -24,7 +24,8 @@ message author equals the profile's `auth.test` user id.
 ### Adding a profile
 
 ```sh
-slack auth add work            # hidden prompt for the token (and cookie if xoxc)
+slack auth add work --curl     # paste a DevTools "Copy as cURL" (easiest, xoxc)
+slack auth add work            # or hidden prompts for the token (and cookie)
 slack auth list
 slack auth use work            # set default
 slack auth status              # verify identity via auth.test
@@ -42,11 +43,35 @@ Create a private app from `examples/app-manifest.yaml` at
 
 ### Getting the xoxc/xoxd pair (client workspaces)
 
+One copy, one paste — let the CLI pull both halves out of a real request:
+
 1. Open the workspace in a browser and sign in.
-2. DevTools → Network → filter `api/` → click any request.
-3. Token: in the request payload/form data, the `token` field (`xoxc-…`).
-4. Cookie: in the request Cookie header, the `d=` value (`xoxd-…`, keep it
-   URL-encoded exactly as shown).
+2. DevTools → **Network** → filter `api/` → click any request → right-click →
+   **Copy → Copy as cURL**.
+3. Run `slack auth add <name> --curl`, paste, press enter twice.
+
+```sh
+slack auth add acme --curl
+# paste the 'Copy as cURL' command, then press enter twice:
+```
+
+It scans the pasted command for the `xoxc-` token and `xoxd-` cookie,
+validates them against `auth.test`, and saves the profile. Works with
+Chrome, Firefox, and Safari output; the cookie is stored URL-encoded
+verbatim, as Slack expects it.
+
+Use **Copy as cURL**, not "Copy as fetch" — the latter strips cookies.
+
+Manual alternative, if you'd rather hunt the values yourself: the token is
+the `token` field in the request payload; the cookie is the row named `d`
+under DevTools → Application → Cookies → `https://app.slack.com` (the
+adjacent `d-s` is not it). Then `slack auth add <name>` prompts for each.
+
+**Why there's no browser-console one-liner:** the `d` cookie is `HttpOnly`,
+so no page script — including anything you paste into the console — can
+read it. That protection is exactly what stops a malicious script from
+stealing your Slack session, and it applies to us too. The cURL copy works
+because DevTools itself sits outside the page sandbox.
 
 The pair is invalidated when the browser session ends or is signed out.
 

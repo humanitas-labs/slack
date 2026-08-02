@@ -13,7 +13,11 @@ use crate::slack::Client;
 
 pub fn run(cmd: &AuthCmd, args: &Args) -> Result<()> {
     match cmd {
-        AuthCmd::Add { name, token_stdin } => add(name, *token_stdin, args.json),
+        AuthCmd::Add {
+            name,
+            token_stdin,
+            curl,
+        } => add(name, *token_stdin, *curl, args.json),
         AuthCmd::List => list(args.json),
         AuthCmd::Status { name } => status(name.as_deref(), args),
         AuthCmd::Use { name } => set_default(name),
@@ -32,8 +36,36 @@ fn read_secret(prompt: &str) -> Result<String> {
     Ok(value.trim().to_string())
 }
 
-fn add(name: &str, token_stdin: bool, json: bool) -> Result<()> {
-    let (token, mut cookie) = if token_stdin {
+/// Read a pasted cURL command: everything until EOF (piped) or a blank line
+/// (interactive). Browsers emit multi-line commands, so a single read_line
+/// would truncate them.
+fn read_curl() -> Result<String> {
+    use std::io::Read;
+    let stdin = std::io::stdin();
+    if !stdin.is_terminal() {
+        let mut buf = String::new();
+        stdin.lock().read_to_string(&mut buf)?;
+        return Ok(buf);
+    }
+    eprintln!("paste the 'Copy as cURL' command, then press enter twice:");
+    let mut buf = String::new();
+    for line in stdin.lock().lines() {
+        let line = line?;
+        if line.trim().is_empty() && !buf.trim().is_empty() {
+            break;
+        }
+        buf.push_str(&line);
+        buf.push('\n');
+    }
+    Ok(buf)
+}
+
+fn add(name: &str, token_stdin: bool, curl: bool, json: bool) -> Result<()> {
+    let (token, mut cookie) = if curl {
+        let pasted = read_curl()?;
+        let pair = super::curl::parse(&pasted)?;
+        (pair.token, Some(pair.cookie))
+    } else if token_stdin {
         let stdin = std::io::stdin();
         let mut lines = stdin.lock().lines();
         let token = lines
@@ -59,7 +91,7 @@ fn add(name: &str, token_stdin: bool, json: bool) -> Result<()> {
         ));
     }
     if kind == TokenKind::Session && cookie.is_none() {
-        if !token_stdin {
+        if !token_stdin && !curl {
             cookie = Some(read_secret("d cookie (xoxd-…): ")?);
         }
         if cookie.as_deref().unwrap_or("").is_empty() {

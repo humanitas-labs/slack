@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-08-02
+
+- `slack auth add <name> --curl` extracts the `xoxc` token and `xoxd` cookie
+  from a pasted DevTools "Copy as cURL" command, replacing the two-place
+  manual hunt. Format-agnostic across Chrome/Firefox/Safari output; cookie
+  preserved URL-encoded. A browser-console one-liner is impossible — the `d`
+  cookie is HttpOnly and unreadable from page scripts.
+
 ## 0.1.0 — 2026-08-02
 
 Initial release.

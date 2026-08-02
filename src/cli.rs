@@ -80,8 +80,11 @@ pub enum AuthCmd {
         /// Profile name
         name: String,
         /// Read token (line 1) and optional cookie (line 2) from stdin
-        #[arg(long)]
+        #[arg(long, conflicts_with = "curl")]
         token_stdin: bool,
+        /// Paste a DevTools "Copy as cURL" command; extracts both token and cookie
+        #[arg(long)]
+        curl: bool,
     },
     /// List profiles
     List,

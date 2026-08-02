@@ -3,6 +3,7 @@
 mod api;
 mod auth;
 mod channel;
+mod curl;
 mod message;
 mod reaction;
 mod search;
