@@ -10,5 +10,4 @@
 
 | Issue | State | Labels | Updated |
 | --- | --- | --- | --- |
-| [ISS-0001 — Publish prebuilt binaries and a no-Cargo installer](iss-0001.md) | open | — | 2026-08-02 |
 | [ISS-0002 — Add incremental slack render Markdown projection](iss-0002.md) | open | — | 2026-08-02 |
