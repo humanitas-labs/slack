@@ -36,9 +36,7 @@ fn read_secret(prompt: &str) -> Result<String> {
     Ok(value.trim().to_string())
 }
 
-/// Read a pasted cURL command: everything until EOF (piped) or a blank line
-/// (interactive). Browsers emit multi-line commands, so a single read_line
-/// would truncate them.
+/// Read a copied cURL command from piped stdin or the macOS clipboard.
 fn read_curl() -> Result<String> {
     use std::io::Read;
     let stdin = std::io::stdin();
@@ -47,7 +45,59 @@ fn read_curl() -> Result<String> {
         stdin.lock().read_to_string(&mut buf)?;
         return Ok(buf);
     }
-    eprintln!("paste the 'Copy as cURL' command, then press enter on a blank line:");
+
+    #[cfg(target_os = "macos")]
+    return read_curl_from_clipboard(&stdin);
+
+    #[cfg(not(target_os = "macos"))]
+    read_curl_from_terminal(&stdin)
+}
+
+#[cfg(target_os = "macos")]
+fn read_curl_from_clipboard(stdin: &std::io::Stdin) -> Result<String> {
+    use std::process::Command;
+
+    eprintln!(concat!(
+        "Import a signed-in Slack browser session:\n",
+        "\n",
+        "1. Open Slack in your browser and open Developer Tools.\n",
+        "2. Select the Network tab, then reload Slack or open a channel.\n",
+        "3. Select any request whose URL contains /api/.\n",
+        "4. Right-click it and choose Copy > Copy as cURL.\n",
+        "   Do not use Copy as fetch; it does not include the required cookie.\n",
+        "5. Return here and press Enter. Do not paste the command.\n",
+        "\n",
+        "The copied request will be read from your clipboard. Your token and cookie\n",
+        "will not be printed.\n",
+        "Press Enter when ready:"
+    ));
+
+    let mut ready = String::new();
+    stdin.lock().read_line(&mut ready)?;
+
+    let output = Command::new("pbpaste").output().map_err(|error| {
+        Error::Usage(format!(
+            "could not read the macOS clipboard with pbpaste: {error}"
+        ))
+    })?;
+    if !output.status.success() {
+        return Err(Error::Usage(
+            "could not read the macOS clipboard with pbpaste".into(),
+        ));
+    }
+    let pasted = String::from_utf8(output.stdout)
+        .map_err(|_| Error::Usage("the clipboard does not contain valid text".into()))?;
+    if pasted.trim().is_empty() {
+        return Err(Error::Usage(
+            "the clipboard is empty — use Copy > Copy as cURL in Slack, then try again".into(),
+        ));
+    }
+    Ok(pasted)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn read_curl_from_terminal(stdin: &std::io::Stdin) -> Result<String> {
+    eprintln!("paste the 'Copy as cURL' command, then press Enter on a blank line:");
     let mut buf = String::new();
     for line in stdin.lock().lines() {
         let line = line?;

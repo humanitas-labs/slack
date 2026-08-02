@@ -24,14 +24,14 @@ pub struct Pair {
 pub fn parse(input: &str) -> Result<Pair> {
     let token = find_prefixed(input, "xoxc-").ok_or_else(|| {
         Error::Usage(
-            "no xoxc- token found in the pasted command — copy a request to /api/ while signed in"
+            "no xoxc- token found in the pasted command — in Slack's Network tab, select a request whose URL contains /api/, then use Copy > Copy as cURL"
                 .into(),
         )
     })?;
     let cookie = find_prefixed(input, "xoxd-").ok_or_else(|| {
         Error::Usage(
-            "no xoxd- cookie found in the pasted command — make sure you used \
-             'Copy as cURL' (not 'Copy as fetch', which omits cookies)"
+            "no xoxd- cookie found in the pasted command — copy the request with \
+             Copy > Copy as cURL; Copy as fetch does not include the required cookie"
                 .into(),
         )
     })?;

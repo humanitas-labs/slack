@@ -87,7 +87,12 @@ pub enum AuthCmd {
         /// Read token (line 1) and optional cookie (line 2) from stdin
         #[arg(long, conflicts_with = "curl")]
         token_stdin: bool,
-        /// Paste a DevTools "Copy as cURL" command; extracts both token and cookie
+        /// Import a browser session from a DevTools "Copy as cURL" request
+        ///
+        /// The command walks you through finding and copying a signed-in Slack API
+        /// request. On macOS it reads the copied request from the clipboard; piped
+        /// input is supported on every platform. It extracts the xoxc token and
+        /// xoxd cookie, then verifies the account before saving the profile.
         #[arg(long)]
         curl: bool,
     },
