@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-08-02
+
+- Remove `auth add --curl`. Pasting a full browser request can exceed terminal
+  input limits or leave credential-bearing lines queued for the shell.
+- Browser-session setup now uses the normal hidden `auth add` prompts: copy the
+  `xoxc` token from Network → Payload and the `d` cookie from Application →
+  Cookies. The README separates user, browser-session, and bot authentication.
+
 ## 0.4.1 — 2026-08-02
 
 - Fix: `reaction add/remove` resolved targets through the channel path, so a

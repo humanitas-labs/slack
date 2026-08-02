@@ -32,69 +32,8 @@ fn read_secret(prompt: &str) -> Result<String> {
     Ok(value.trim().to_string())
 }
 
-/// Read a copied cURL command from piped stdin or the macOS clipboard.
-fn read_curl() -> Result<String> {
-    use std::io::Read;
-    let stdin = std::io::stdin();
-    if !stdin.is_terminal() {
-        let mut buf = String::new();
-        stdin.lock().read_to_string(&mut buf)?;
-        return Ok(buf);
-    }
-
-    #[cfg(target_os = "macos")]
-    return read_curl_from_clipboard();
-
-    #[cfg(not(target_os = "macos"))]
-    read_curl_from_terminal(&stdin)
-}
-
-#[cfg(target_os = "macos")]
-fn read_curl_from_clipboard() -> Result<String> {
-    use std::process::Command;
-
-    eprintln!("reading the copied Slack request from the clipboard...");
-    let output = Command::new("pbpaste").output().map_err(|error| {
-        Error::Usage(format!(
-            "could not read the macOS clipboard with pbpaste: {error}"
-        ))
-    })?;
-    if !output.status.success() {
-        return Err(Error::Usage(
-            "could not read the macOS clipboard with pbpaste".into(),
-        ));
-    }
-    let pasted = String::from_utf8(output.stdout)
-        .map_err(|_| Error::Usage("the clipboard does not contain valid text".into()))?;
-    if pasted.trim().is_empty() {
-        return Err(Error::Usage(
-            "the clipboard is empty — use Copy > Copy as cURL in Slack, then try again".into(),
-        ));
-    }
-    Ok(pasted)
-}
-
-#[cfg(not(target_os = "macos"))]
-fn read_curl_from_terminal(stdin: &std::io::Stdin) -> Result<String> {
-    eprintln!("paste the 'Copy as cURL' command, then press Enter on a blank line:");
-    let mut buf = String::new();
-    for line in stdin.lock().lines() {
-        let line = line?;
-        if line.trim().is_empty() && !buf.trim().is_empty() {
-            break;
-        }
-        buf.push_str(&line);
-        buf.push('\n');
-    }
-    Ok(buf)
-}
-
-fn add(name: &str, token_stdin: bool, curl: bool, json: bool) -> Result<()> {
-    let (token, mut cookie) = if curl {
-        let pasted = read_curl()?;
-        let pair = super::curl::parse(&pasted)?;
-        (pair.token, Some(pair.cookie))
-    } else if token_stdin {
+fn add(name: &str, token_stdin: bool, json: bool) -> Result<()> {
+    let (token, mut cookie) = if token_stdin {
         let stdin = std::io::stdin();
         let mut lines = stdin.lock().lines();
         let token = lines
@@ -110,7 +49,10 @@ fn add(name: &str, token_stdin: bool, curl: bool, json: bool) -> Result<()> {
             .filter(|l| !l.is_empty());
         (token, cookie)
     } else {
-        (read_secret("token: ")?, None)
+        (
+            read_secret("token (xoxp-/xoxb-, or xoxc- from Network > Payload): ")?,
+            None,
+        )
     };
 
     let kind = TokenKind::of(&token);
@@ -120,7 +62,12 @@ fn add(name: &str, token_stdin: bool, curl: bool, json: bool) -> Result<()> {
         ));
     }
     if kind == TokenKind::Session && cookie.is_none() {
-        if !token_stdin && !curl {
+        if !token_stdin {
+            eprintln!(concat!(
+                "Browser sessions also need the d cookie:\n",
+                "1. In DevTools, open Application > Cookies.\n",
+                "2. Select your Slack workspace and copy the value of the d cookie.\n"
+            ));
             cookie = Some(read_secret("d cookie (xoxd-…): ")?);
         }
         if cookie.as_deref().unwrap_or("").is_empty() {

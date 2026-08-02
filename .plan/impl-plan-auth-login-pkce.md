@@ -11,8 +11,9 @@ Setup today has two paths (`src/commands/auth.rs`):
 
 - **`auth add` (xoxp)** — the supported path, but manual: create a Slack app,
   install it, copy the User OAuth Token, paste it. Repetitive per workspace.
-- **`auth add --curl`** — the unsupported browser-session fallback for
-  workspaces where an app can't be installed. Kept.
+- **`auth add` (xoxc + d cookie)** — the unsupported browser-session fallback
+  for workspaces where an app can't be installed. Both values are copied
+  directly from DevTools.
 
 We rejected `--from-app` (Slack Desktop LevelDB parsing) — tokens are
 snappy-compressed, only one extracts reliably, and the code reads like
@@ -35,7 +36,8 @@ once, mark it distributable, and ship its **`client_id`** in the binary
   per-workspace app, no token copying.
 - **Client workspaces:** their admin must still approve the app being added.
   Absent that approval, OAuth hits the same wall as today → fall back to
-  `--curl`. `login` does not change the client story.
+  manually adding the browser token and cookie. `login` does not change the
+  client story.
 
 ## Changes
 
@@ -102,8 +104,9 @@ once, mark it distributable, and ship its **`client_id`** in the binary
    in `oauth.rs` or a `src/auth/mod.rs`. Documented as non-secret.
 
 7. **Docs.** README: lead the Authenticate section with `slack auth login`;
-   demote manual xoxp paste to "or, add an existing token"; keep `--curl` as
-   fallback. CHANGELOG 0.5.0 entry. `examples/app-manifest.yaml`: add a note
+   demote manual xoxp paste to "or, add an existing token"; document manual
+   browser token + cookie setup as the fallback. CHANGELOG 0.5.0 entry.
+   `examples/app-manifest.yaml`: add a note
    that the same manifest + PKCE toggle backs `login`.
 
 ## Files touched
@@ -145,4 +148,4 @@ once, mark it distributable, and ship its **`client_id`** in the binary
   status test` reports the right identity.
 - `slack message send '@self' 'login flow works'` — leave it up for review,
   don't auto-delete.
-- Confirm `--curl` and `auth add` paths still work unchanged.
+- Confirm manual xoxp and xoxc + d-cookie `auth add` paths still work.

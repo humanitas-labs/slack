@@ -11,34 +11,49 @@ cargo install --path .
 
 You authenticate once per workspace; each is saved under a name you choose.
 
-The supported path is a user token from a private Slack app:
+### A) User token (recommended)
+
+Use a user token when you can install a private Slack app. It is supported by
+Slack and sends messages as you.
 
 1. Create an app from [`examples/app-manifest.yaml`](examples/app-manifest.yaml).
 2. Install it to the workspace and copy its **User OAuth Token** (`xoxp-…`).
-3. Add and verify the profile:
+3. Add and verify the workspace:
 
 ```sh
 slack auth add <workspace>
 slack auth status
 ```
 
-For a workspace where you cannot install an app, the CLI can use your browser
-session. Copy any signed-in Slack API request from DevTools with **Copy as
-cURL**, then run:
+### B) Browser session (no app)
+
+Use an existing browser session when you cannot install an app in the
+workspace. Copy two values directly from DevTools:
+
+1. Open the Network tab, select a Slack `/api/` request, open its Payload tab,
+   and copy the `token` value (`xoxc-…`).
+2. Open Application → Cookies, select your Slack workspace, and copy the value
+   of the `d` cookie (`xoxd-…`).
+3. Run the command below and paste each value into its hidden prompt.
 
 ```sh
-slack auth add <workspace> --curl
+slack auth add <workspace>
 ```
 
-On macOS, copy the request before running the command. The CLI reads the
-clipboard immediately; do not paste into the terminal or press Return afterward.
-You can also pipe a copied request into the command on any platform. `--curl`
-scans it for the `xoxc` token and `xoxd` cookie, so you copy one thing instead of
-hunting two.
-
 This `xoxc`/cookie path is unsupported by Slack and expires with the browser
-session. Prefer an `xoxp` user token. Bot tokens (`xoxb-…`) are accepted for
-explicit bot automation.
+session. Prefer a user token when the workspace allows it.
+
+### C) Bot token
+
+Use a bot token only for automation that should act as the app rather than as
+you. Copy the app's **Bot User OAuth Token** (`xoxb-…`), then run:
+
+```sh
+slack auth add <workspace>
+slack auth status
+```
+
+### Manage workspaces
 
 Workspaces are stored in `~/.config/slack/config.json` with mode `0600`.
 
